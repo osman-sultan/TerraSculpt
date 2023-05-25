@@ -1,4 +1,6 @@
 # Imports
+from __future__ import print_function, division
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -15,7 +17,6 @@ import torchvision
 import torchvision.transforms as transforms
 from torchvision import transforms
 import torch.backends.cudnn as cudnn
-from __future__ import print_function, division
 from torchinfo import summary
 import torch.utils.data as data
 
@@ -259,7 +260,7 @@ def imshow(inp, title=None):
     plt.pause(0.001)  # pause a bit so that plots are updated
 
 
-def visualize_model(model, test_dataset, num_images=6):
+def visualize_model(model, test_dataset, class_names, num_images=6):
     was_training = model.training
     model.eval()
     images_so_far = 0
@@ -292,6 +293,7 @@ def visualize_model(model, test_dataset, num_images=6):
                     return
         model.train(mode=was_training)
 
+        # confusion matrix
         cm = confusion_matrix(y_true, y_pred)
         sns.set()
         sns.heatmap(cm, annot=True, fmt="g", cmap="Blues", cbar=False)
@@ -386,7 +388,7 @@ def main():
         "street",
     ]
 
-    train_loader1 = torch.utils.data.DataLoader(
+    train_loader = torch.utils.data.DataLoader(
         oversampled_train_dataset,
         batch_size=4,
         shuffle=True,
@@ -395,14 +397,15 @@ def main():
     )
 
     # Get a batch of training data
-    inputs, classes = next(iter(train_loader1))
+    inputs, classes = next(iter(train_loader))
 
     # Make a grid from batch
     out = torchvision.utils.make_grid(inputs)
 
     imshow(out, title=[class_names[x] for x in classes])
 
-    visualize_model(model, test_dataset, 3)
+    # test model with test data and show corresponding confusion matrix/heat map
+    visualize_model(model, test_dataset, class_names, 3)
 
     # optionally test an image not within the dataset
     test_single_image(model, "./images/abbey-road-london.webp")

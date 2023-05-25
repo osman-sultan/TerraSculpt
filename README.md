@@ -1,10 +1,15 @@
 # Landscape-Generation-and-Classification
-Preliminary investigation exploring changes in landscape over time due to natural processes as well as climate change using computer vision models
 
-## Abstract 
+Preliminary investigation exploring changes in landscape over time due to natural processes as well as climate change using computer vision models.
+
+## THIS REPO IS UNDER CONSTRUCTION
+
+## Abstract
+
 The architecture of various landscapes continues to change as humans are developing. This project outlines how deep learning models for computer vision can be utilized to classify and generate images of landscape. For the primary classification model, the team incorporated the EfficientNet architecture to classify landscapes, while the primary generational model is a variational autoencoder. Two public datasets were used and processed in order to train the neural network models. Some of the data processing techniques that were applied include image normalization of pixels. Image augmentation was further used to address class imbalance. The baseline CNN obtained approximately a 68\% accuracy on test data, while the EfficientNet model has achieved approximately 79\% accuracy. Additionally, both the autoencoder and variational autoencoder managed to capture image colour and general spatial features, however the baseline autoencoder produces clearer images.
 
-## Overview 
+## Overview
+
 Preliminary investigation has began to develop two sets of deep learning models, where one set will be used to classify landscapes from image data. The goal of the classification model will be to accurately label artificially generated images that will be produced from the second set of models. This can be useful for various applications, such as automated image classification and object recognition. The model could be used to identify different types of landscapes, including forests, mountains, oceans, and deserts. This could then be used to provide valuable information for environmental monitoring, land-use planning, and tourism. The value of this project resides in its potential to enable accurate and efficient classification of land-scape imagery. High-resolution satellite and aerial photos are becoming more widely available,and there is a rising need for automated tools that can process and interpret this data. Through develop-ing a deep learning model for landscape detection, we will streamline the image analysis process as well as provide valuable insights for a wide range of applications. Deep learning is the most appropriate strategy for this project due to its ability to learn complex patterns and representations from raw data. Models such as a random forest are theoretically possible for image detection and classification, but only to a simple degree. In our project, we are aiming to classify images from 7 different classes (sea, mountains, etc.) and heavy feature extraction and representation learning is necessary for that. Below, is a figure depicting the project pipeline for this initial investigation. Thus, the project pipeline for this initial investigation can be seen below:
 
 ![Project Pipeline](https://github.com/100emoji/Landscape-Generation-and-Classification/blob/main/images/fig1.jpg)
