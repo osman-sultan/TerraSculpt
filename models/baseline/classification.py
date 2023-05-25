@@ -246,7 +246,7 @@ def get_test_accuracy(model, test_loader):
     return correct / total
 
 
-# Visualize EfficientNet/CNN
+# Visualize CNN
 def imshow(inp, title=None):
     """Imshow for Tensor."""
     inp = inp.numpy().transpose((1, 2, 0))

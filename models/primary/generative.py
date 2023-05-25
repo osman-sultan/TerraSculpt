@@ -8,14 +8,19 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
+import torch.nn.functional as F
+import torch.optim as optim
 from torchvision import transforms
 from torchinfo import summary
 import torch.utils.data as data
 
 
-class Autoencoder(nn.Module):
+# Variational Autoencoder
+class VAE(nn.Module):
     def __init__(self):
-        super(Autoencoder, self).__init__()
+        super(VAE, self).__init__()
+
+        # encoder
         self.encoder = nn.Sequential(  # like the Composition layer you built
             nn.Conv2d(3, 16, 3, stride=2, padding=1),
             nn.ReLU(),
@@ -23,19 +28,57 @@ class Autoencoder(nn.Module):
             nn.ReLU(),
             nn.Conv2d(32, 64, 7),
         )
+        # self.fc1 = nn.Linear(64 * 32 * 32, 350)
+        self.relu = nn.ReLU()
+        self.fc2m = nn.Linear(64 * 32 * 32, zdim)  # mu layer
+        self.fc2s = nn.Linear(64 * 32 * 32, zdim)  # sd layer
+
+        # decoder
+        self.fc3 = nn.Linear(zdim, 64 * 32 * 32)
+        # self.fc4 = nn.Linear(350, 64 * 32 * 32)
+        # self.sigmoid = nn.Sigmoid()
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(64, 32, 7),
             nn.ReLU(),
             nn.ConvTranspose2d(32, 16, 3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
             nn.ConvTranspose2d(16, 3, 3, stride=2, padding=2, output_padding=1),
-            nn.Sigmoid(),
+            nn.Tanh(),
         )
 
-    def forward(self, x):
+    def encode(self, x):
         x = self.encoder(x)
+        h1 = x.view(-1, 64 * 32 * 32)
+        return self.fc2m(h1), self.fc2s(h1)
+
+    # reparameterize
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = logvar.mul(0.5).exp_()
+            eps = std.data.new(std.size()).normal_()
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
+
+    def decode(self, z):
+        h3 = self.relu(self.fc3(z))
+        x = h3.view(-1, 64, 32, 32)
         x = self.decoder(x)
         return x
+
+    def forward(self, x):
+        mu, logvar = self.encode(x)
+        z = self.reparameterize(mu, logvar)
+        return self.decode(z), mu, logvar
+
+
+# loss function for VAE are unique and use Kullback-Leibler
+# divergence measure to force distribution to match unit Gaussian
+def loss_function(recon_x, x, mu, logvar, batch_size):
+    mse = F.mse_loss(recon_x, x, reduction="sum")
+    kld = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    kld /= batch_size * 150 * 150 * 3
+    return mse + kld
 
 
 def train_test_split():
@@ -107,32 +150,31 @@ def data_augmentation(train_dataset):
     return oversampled_train_dataset
 
 
-def train(model, train_dataset, num_epochs=5, batch_size=64, learning_rate=1e-3):
-    torch.manual_seed(42)
-    criterion = nn.MSELoss()  # mean square error loss
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=learning_rate, weight_decay=1e-5
-    )
+def train(model, num_epochs=1, batch_size=64, learning_rate=0.0001):
+    model.train()  # train mode so that we do reparameterization
+
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
+        oversampled_train_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=2,
         pin_memory=True,
     )
+
+    optimizer = optim.Adam(model.parameters(), learning_rate)
+
     outputs = []
     for epoch in range(num_epochs):
-        for data in train_loader:
+        for data in train_loader:  # load batch
             img, _ = data
 
             #############################################
-            # To Enable GPU Usage
-            if use_cuda and torch.cuda.is_available():
-                img = img.cuda()
+            # To Enable GPU Usag
+            img = img.cuda()
             #############################################
+            recon, mu, logvar = model(img)
 
-            recon = model(img)
-            loss = criterion(recon, img)
+            loss = loss_function(recon, img, mu, logvar, batch_size)  # calculate loss
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -141,14 +183,15 @@ def train(model, train_dataset, num_epochs=5, batch_size=64, learning_rate=1e-3)
         outputs.append(
             (epoch, img, recon),
         )
-    return outputs
+
+    return model, outputs
 
 
-def visualize_model(outputsAE):
+def visualize_model(outputs):
     for k in range(0, 10, 5):
         plt.figure(figsize=(9, 2))
-        imgs = outputsAE[k][1].cpu().detach().numpy()
-        recon = outputsAE[k][2].cpu().detach().numpy()
+        imgs = outputs[k][1].cpu().detach().numpy()
+        recon = outputs[k][2].cpu().detach().numpy()
         for i, item in enumerate(imgs):
             if i >= 9:
                 break
@@ -168,11 +211,14 @@ if __name__ == "__main__":
     train_dataset, val_dataset, test_dataset = train_test_split()
     oversampled_train_dataset = data_augmentation(train_dataset)
 
-    model = Autoencoder()
+    # dimensions of latent space
+    zdim = 64
+
+    modelVAE = VAE()
 
     # for debugging/fine-tuning. visualizes model architecuture. comment out if not needed
     summary(
-        model=model,
+        model=modelVAE,
         input_size=(
             64,
             3,
@@ -187,13 +233,17 @@ if __name__ == "__main__":
 
     use_cuda = True
     if use_cuda and torch.cuda.is_available():
-        model.cuda()
+        modelVAE.cuda()
         print("CUDA is available! Training on GPU ...")
     else:
         print("CUDA is not available. Training on CPU ...")
 
-    max_epochs = 10
-    outputsAE = train(model, oversampled_train_dataset, num_epochs=max_epochs)
+    batch_size = 64
+    modelVAE, outputs = train(
+        modelVAE, oversampled_train_dataset, num_epochs=20, batch_size=batch_size
+    )
 
-    # test autoencoder
-    visualize_model(outputsAE)
+    # test vae
+    visualize_model(outputs)
+
+    torch.save(modelVAE, "VAE")
