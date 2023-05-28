@@ -104,7 +104,7 @@ The primary generator will be a custom Convolutional Autoencoder (C-VAE). Struct
 
 ## Training and Testing
 
-Due to the large dataset of RGB images all models were training on GPU's using CUDA wherever possible. The dataset was split 70-15-15 into training, validation, and testing respectively. Extensive hyperparameter tuning was conducting while training such different optimizers (Adam, SGD), batch size, learning rate, and more.
+Due to the large dataset of RGB images all models were training on GPU's using CUDA wherever possible. The dataset was split 70-15-15 into training, validation, and testing respectively. Extensive hyperparameter tuning was conducted while training such as testing different optimizers (Adam, SGD), batch size, learning rate, and more.
 
 Testing was done by obtaining a tensor representation of a decoded image outputed by the VAE. This image was then fed into the EfficientNet and tested for correct classification.
 
