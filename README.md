@@ -94,7 +94,7 @@ Utilizing the principle of transfer learning, I direct the output from the pretr
   <img src="./images/conv.jpg"/> 
 </p>
 
-## Varational Autoencoder
+### Varational Autoencoder
 
 The primary generator will be a custom Convolutional Autoencoder (C-VAE). Structured in three parts: an encoder, reparameterization step, and a decoder. The encoder uses 3 convolutional layers with ReLU activation to process input images, after which it computes the mean and standard deviation of the latent space representation. Then, a latent vector is sampled using these calculations, with random noise added for diverse sample generation. The decoder reconstructs the input image from this vector, utilizing 3 transposed convolutional layers. The loss function of this C-VAE uses Mean Squared Error (MSE) for reconstruction loss, and Kullback-Leibler (KBL) divergence to compare the learned latent distribution with a prior one, like a standard Gaussian.
 
